@@ -3,10 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/forgemechanic/ebnfcheck/ebnf"
 )
+
+var dialectFlag string
+
+func init() {
+	flag.StringVar(&dialectFlag, "dialect", "default", "EBNF dialect to use (eg 'go')")
+	flag.StringVar(&dialectFlag, "d", "default", "EBNF dialect to use (shorthand)")
+}
 
 func main() {
 	flag.Usage = func() {
@@ -33,6 +41,15 @@ func main() {
 	fmt.Println("OK")
 }
 
+func parseWithDialect(dialect string, filename string, src io.Reader) (ebnf.Grammar, error) {
+	d, ok := ebnf.GetDialect(dialect)
+	if !ok {
+		return nil, fmt.Errorf("unknown dialect: %s", dialect)
+	}
+	g, err := d.Parse(filename, src)
+	return g, err
+}
+
 func validateEBNF(filePath string, startRule string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -40,7 +57,7 @@ func validateEBNF(filePath string, startRule string) error {
 	}
 	defer file.Close()
 
-	grammar, err := ebnf.Parse(filePath, file)
+	grammar, err := parseWithDialect(dialectFlag, filePath, file)
 	if err != nil {
 		return err
 	}
