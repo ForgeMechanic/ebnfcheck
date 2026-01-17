@@ -1,0 +1,9 @@
+Program = Statement { Statement } .
+Statement = Identifier "=" Expression ";" .
+Expression = Term { "+" Term | "-" Term } .
+Term = Factor { "*" Factor | "/" Factor } .
+Factor = Identifier | Number | "(" Expression ")" .
+Identifier = letter { letter | digit } .
+Number = digit { digit } .
+letter = "a" … "z" | "A" … "Z" .
+digit = "0" … "9" .
