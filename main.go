@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"golang.org/x/exp/ebnf"
 	"os"
+
+	"github.com/forgemechanic/ebnfcheck/ebnf"
 )
 
 func main() {
