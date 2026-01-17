@@ -19,6 +19,7 @@
 // non-terminal productions (i.e., productions which allow white-space
 // and comments between tokens); all other production names denote
 // lexical productions.
+// comments can be written using the form "(* ... *)".
 package ebnf
 
 import (

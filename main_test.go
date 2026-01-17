@@ -69,17 +69,17 @@ func TestValidateEBNF_EmptyStartRule(t *testing.T) {
 func TestValidateEBNF_WithTemporaryFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.ebnf")
-	
+
 	content := []byte("TestRule = \"test\" .\n")
 	if err := os.WriteFile(tmpFile, content, 0644); err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	
+
 	err := validateEBNF(tmpFile, "")
 	if err != nil {
 		t.Errorf("Expected no error for temporary valid EBNF file, got: %v", err)
 	}
-	
+
 	err = validateEBNF(tmpFile, "TestRule")
 	if err != nil {
 		t.Errorf("Expected no error with valid start rule, got: %v", err)

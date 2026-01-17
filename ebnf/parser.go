@@ -5,6 +5,8 @@
 package ebnf
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"strconv"
 	"text/scanner"
@@ -19,9 +21,15 @@ type parser struct {
 }
 
 func (p *parser) next() {
-	p.tok = p.scanner.Scan()
-	p.pos = p.scanner.Position
-	p.lit = p.scanner.TokenText()
+	for {
+		p.tok = p.scanner.Scan()
+		p.pos = p.scanner.Position
+		p.lit = p.scanner.TokenText()
+		// Skip comments produced by the scanner
+		if p.tok != scanner.Comment {
+			break
+		}
+	}
 }
 
 func (p *parser) error(pos scanner.Position, msg string) {
@@ -158,9 +166,89 @@ func (p *parser) parseProduction() *Production {
 	return &Production{name, expr}
 }
 
+// stripParenStarComments removes comments of the form "(* ... *)" from data.
+// It skips comment detection when inside string literals ("..." or `...`).
+// Returns an error when a comment is not terminated.
+func stripParenStarComments(filename string, data []byte) ([]byte, error) {
+	var out []byte
+	for i := 0; i < len(data); {
+		switch data[i] {
+		case '"':
+			// quoted string, handle escapes
+			out = append(out, '"')
+			i++
+			for i < len(data) {
+				if data[i] == '\\' {
+					if i+1 < len(data) {
+						out = append(out, data[i], data[i+1])
+						i += 2
+						continue
+					}
+				}
+				out = append(out, data[i])
+				if data[i] == '"' {
+					i++
+					break
+				}
+				i++
+			}
+		case '`':
+			// raw string
+			out = append(out, '`')
+			i++
+			for i < len(data) {
+				out = append(out, data[i])
+				if data[i] == '`' {
+					i++
+					break
+				}
+				i++
+			}
+		default:
+			// look for comment start
+			if data[i] == '(' && i+1 < len(data) && data[i+1] == '*' {
+				// skip until '*)'
+				start := i
+				i += 2
+				closed := false
+				for i < len(data) {
+					if data[i] == '*' && i+1 < len(data) && data[i+1] == ')' {
+						i += 2
+						closed = true
+						break
+					}
+					i++
+				}
+				if !closed {
+					return nil, fmt.Errorf("%s: unterminated comment at offset %d", filename, start)
+				}
+				continue
+			}
+			out = append(out, data[i])
+			i++
+		}
+	}
+	return out, nil
+}
+
 func (p *parser) parse(filename string, src io.Reader) Grammar {
-	p.scanner.Init(src)
+	data, err := io.ReadAll(src)
+	if err != nil {
+		// If we can't read the source, initialize scanner with empty input
+		data = []byte{}
+	}
+	// Remove '(* ... *)' style comments prior to scanning.
+	if stripped, err := stripParenStarComments(filename, data); err == nil {
+		data = stripped
+	} else {
+		// Report unterminated comment as a parse error and proceed with original data
+		p.error(scanner.Position{Filename: filename}, err.Error())
+	}
+
+	p.scanner.Init(bytes.NewReader(data))
 	p.scanner.Filename = filename
+	// Enable scanning of comments so we can detect and skip them in next().
+	p.scanner.Mode |= scanner.ScanComments
 	p.next() // initializes pos, tok, lit
 
 	grammar := make(Grammar)
