@@ -28,22 +28,8 @@ func init() {
 		Name:  "go",
 		Parse: func(filename string, src io.Reader) (Grammar, error) { return Parse(filename, src) },
 	})
-
-	// Register "w3c" and "iso" dialects. For now they use the same parser
-	// implementation, but this registry allows adding dialect-specific
-	// parsing behavior later (comment styles, lexical rules, verification
-	// differences, etc.).
-	RegisterDialect("w3c", Dialect{
-		Name:  "w3c",
-		Parse: func(filename string, src io.Reader) (Grammar, error) { return Parse(filename, src) },
-	})
-	RegisterDialect("iso", Dialect{
-		Name:  "iso",
-		Parse: func(filename string, src io.Reader) (Grammar, error) { return Parse(filename, src) },
-	})
-
-	// Alias "default" to "w3c" (chosen as the default dialect).
-	if d, ok := GetDialect("w3c"); ok {
+	// Alias "default" to "go" for backward compatibility.
+	if d, ok := GetDialect("go"); ok {
 		RegisterDialect("default", d)
 	}
 }

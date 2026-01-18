@@ -30,7 +30,7 @@ func TestDefaultAlias(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected 'default' dialect to be registered")
 	}
-	if d.Name != "w3c" {
-		t.Fatalf("default alias expected to refer to 'w3c', got %q", d.Name)
+	if d.Name != "go" {
+		t.Fatalf("default alias expected to refer to 'go', got %q", d.Name)
 	}
 }
